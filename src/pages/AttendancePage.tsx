@@ -2,14 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import type { Employee, Attendance } from '../types'
 
-const WAGE_STORAGE_KEY = 'attendance_daily_wages'
-
-function loadWages(): Record<string, string> {
-  try { return JSON.parse(localStorage.getItem(WAGE_STORAGE_KEY) ?? '{}') } catch { return {} }
-}
-function saveWages(wages: Record<string, string>) {
-  localStorage.setItem(WAGE_STORAGE_KEY, JSON.stringify(wages))
-}
 
 export default function AttendancePage() {
   const todayStr = new Date().toISOString().slice(0, 10)
@@ -29,7 +21,6 @@ export default function AttendancePage() {
 
   // 従業員別集計
   const [empMonthly, setEmpMonthly] = useState<{ id: string; name: string; days: number }[]>([])
-  const [dailyWages, setDailyWages] = useState<Record<string, string>>(loadWages)
 
   const fetchToday = useCallback(async () => {
     const [{ data: emps }, { data: att }] = await Promise.all([
@@ -68,11 +59,6 @@ export default function AttendancePage() {
     }
   }, [viewYear, viewMonth])
 
-  const handleWageChange = (empId: string, value: string) => {
-    const next = { ...dailyWages, [empId]: value }
-    setDailyWages(next)
-    saveWages(next)
-  }
 
   useEffect(() => { fetchToday() }, [fetchToday])
   useEffect(() => { fetchMonthly() }, [fetchMonthly])
@@ -263,57 +249,19 @@ export default function AttendancePage() {
             </button>
           </div>
 
-          {/* 合計給料サマリー */}
-          <div className="bg-green-600 text-white rounded-2xl p-5 mb-4 flex items-center justify-between shadow-md">
-            <div>
-              <p className="text-green-200 text-sm">{viewYear}年{viewMonth}月 給料合計</p>
-              <p className="text-4xl font-bold mt-1">
-                ¥{empMonthly.reduce((sum, e) => {
-                  const wage = parseInt(dailyWages[e.id] ?? '0', 10) || 0
-                  return sum + e.days * wage
-                }, 0).toLocaleString()}
-              </p>
-            </div>
-            <div className="text-5xl opacity-30">💴</div>
-          </div>
-
           {/* 従業員別リスト */}
           {empMonthly.length === 0 ? (
             <p className="text-center text-gray-400 py-8 text-sm">データがありません</p>
           ) : (
-            <div className="space-y-3">
-              {empMonthly.map(emp => {
-                const wage = parseInt(dailyWages[emp.id] ?? '0', 10) || 0
-                const total = emp.days * wage
-                return (
-                  <div key={emp.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-bold text-gray-800">{emp.name}</span>
-                      <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
-                        {emp.days}日出勤
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs text-gray-500 whitespace-nowrap">日当</label>
-                      <div className="flex items-center flex-1 border border-gray-200 rounded-lg overflow-hidden">
-                        <span className="px-2 text-gray-400 text-sm">¥</span>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          value={dailyWages[emp.id] ?? ''}
-                          onChange={e => handleWageChange(emp.id, e.target.value)}
-                          placeholder="0"
-                          className="flex-1 py-1.5 pr-2 text-sm text-right outline-none"
-                        />
-                      </div>
-                      <span className="text-xs text-gray-400">×{emp.days}日</span>
-                      <span className="text-sm font-bold text-green-700 min-w-[80px] text-right">
-                        ¥{total.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="space-y-2">
+              {empMonthly.map(emp => (
+                <div key={emp.id} className="bg-white rounded-xl p-4 flex items-center justify-between shadow-sm border border-gray-100">
+                  <span className="font-medium text-gray-800">{emp.name}</span>
+                  <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
+                    {emp.days}日出勤
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </div>
