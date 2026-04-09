@@ -96,3 +96,58 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .pulse-glow-anim {
   animation: pulse-glow 1.5s ease-in-out infinite;
 }
+
+/* ========== カードフリップ（3D） ========== */
+.card-flipper {
+  perspective: 1000px;
+}
+.card-flip-inner {
+  position: relative;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+.card-flip-inner.flipped {
+  transform: rotateY(180deg);
+}
+.card-face, .card-back-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.card-face {
+  transform: rotateY(180deg);
+}
+
+/* ホログラム（レジェンド） */
+@keyframes holo-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.holo-legend {
+  background: linear-gradient(135deg,
+    rgba(255,215,0,0.15) 0%,
+    rgba(255,100,50,0.15) 20%,
+    rgba(150,50,255,0.15) 40%,
+    rgba(50,150,255,0.15) 60%,
+    rgba(50,255,150,0.15) 80%,
+    rgba(255,215,0,0.15) 100%
+  );
+  background-size: 300% 300%;
+  animation: holo-shift 3s ease infinite;
+}
+/* シルバーエフェクト（SR） */
+@keyframes silver-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.holo-sr {
+  background: linear-gradient(135deg,
+    rgba(200,200,200,0.1) 0%,
+    rgba(150,150,255,0.1) 33%,
+    rgba(200,200,200,0.2) 66%,
+    rgba(200,200,200,0.1) 100%
+  );
+  background-size: 300% 300%;
+  animation: silver-shift 2s ease infinite;
+}
