@@ -37,8 +37,20 @@ export default function WakeCheckPage() {
     setSubmitting(null)
   }
 
+  const handleUncheck = async (employeeId: string) => {
+    setSubmitting(employeeId)
+    const check = getCheck(employeeId)
+    if (check) {
+      const { error } = await supabase
+        .from('wake_checks')
+        .delete()
+        .eq('id', check.id)
+      if (!error) await fetchData()
+    }
+    setSubmitting(null)
+  }
+
   const getCheck = (id: string) => checks.find(c => c.employee_id === id)
-  const isChecked = (id: string) => !!getCheck(id)
 
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
@@ -62,7 +74,6 @@ export default function WakeCheckPage() {
         </div>
       ) : (
         <div className="px-4 py-4">
-          {/* サマリーカード */}
           <div className="bg-blue-600 text-white rounded-2xl p-5 mb-4 shadow-md">
             <div className="flex items-center justify-between">
               <div>
@@ -75,18 +86,13 @@ export default function WakeCheckPage() {
               <div className="text-5xl opacity-30">⏰</div>
             </div>
             {uncheckedCount > 0 && (
-              <p className="text-sm text-orange-200 mt-2">
-                未確認: {uncheckedCount}人
-              </p>
+              <p className="text-sm text-orange-200 mt-2">未確認: {uncheckedCount}人</p>
             )}
             {uncheckedCount === 0 && employees.length > 0 && (
-              <p className="text-sm text-green-200 mt-2">
-                全員確認完了！
-              </p>
+              <p className="text-sm text-green-200 mt-2">全員確認完了！</p>
             )}
           </div>
 
-          {/* 従業員ボタン一覧 */}
           {employees.length === 0 ? (
             <p className="text-center text-gray-400 py-8 text-sm">
               管理画面から従業員を登録してください
@@ -114,19 +120,30 @@ export default function WakeCheckPage() {
                           </p>
                         )}
                       </div>
-                      {checked ? (
-                        <span className="text-sm text-green-600 font-medium bg-green-100 px-3 py-2 rounded-xl">
-                          起きました
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleWakeCheck(emp.id)}
-                          disabled={isLoading}
-                          className="bg-orange-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm active:bg-orange-600 active:scale-95 transition-all disabled:opacity-50"
-                        >
-                          {isLoading ? '...' : '起きました'}
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {checked ? (
+                          <>
+                            <span className="text-sm text-green-600 font-medium bg-green-100 px-3 py-2 rounded-xl">
+                              起きました
+                            </span>
+                            <button
+                              onClick={() => handleUncheck(emp.id)}
+                              disabled={isLoading}
+                              className="text-xs text-gray-400 border border-gray-200 px-2 py-2 rounded-xl active:bg-gray-100 transition-all disabled:opacity-50"
+                            >
+                              {isLoading ? '...' : '取り消し'}
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleWakeCheck(emp.id)}
+                            disabled={isLoading}
+                            className="bg-orange-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm active:bg-orange-600 active:scale-95 transition-all disabled:opacity-50"
+                          >
+                            {isLoading ? '...' : '起きました'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )

@@ -1,11 +1,10 @@
 import { NavLink } from 'react-router-dom'
 
 const navItems = [
-  { to: '/schedule',   label: '予定',    icon: '📅' },
-  { to: '/attendance', label: '出勤',    icon: '👷' },
-  { to: '/wakecheck',  label: '起床',    icon: '⏰' },
-  { to: '/fun',        label: 'おたのしみ', icon: '🎰' },
-  { to: '/admin',      label: '管理',    icon: '⚙️' },
+  { to: '/schedule',   label: '予定',  icon: '📅' },
+  { to: '/attendance', label: '出勤',  icon: '👷' },
+  { to: '/wakecheck',  label: '起床',  icon: '⏰' },
+  { to: '/admin',      label: '管理',  icon: '⚙️' },
 ]
 
 export default function BottomNav() {
