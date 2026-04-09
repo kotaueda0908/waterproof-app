@@ -64,6 +64,18 @@ export default function AttendancePage() {
     setSubmitting(null)
   }
 
+  const handleCancelAttendance = async (employeeId: string) => {
+    if (!confirm('出勤を取り消しますか？')) return
+    setSubmitting(employeeId)
+    await supabase
+      .from('attendance')
+      .delete()
+      .eq('employee_id', employeeId)
+      .eq('date', todayStr)
+    await fetchToday()
+    setSubmitting(null)
+  }
+
   const isCheckedIn = (id: string) => todayAttendance.some(a => a.employee_id === id)
 
   const todayLabel = new Date().toLocaleDateString('ja-JP', {
@@ -144,9 +156,18 @@ export default function AttendancePage() {
                   >
                     <span className="font-medium text-gray-800">{emp.name}</span>
                     {checked ? (
-                      <span className="text-sm text-green-600 font-medium flex items-center gap-1">
-                        <span>✓</span> 出勤済み
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-green-600 font-medium flex items-center gap-1">
+                          <span>✓</span> 出勤済み
+                        </span>
+                        <button
+                          onClick={() => handleCancelAttendance(emp.id)}
+                          disabled={isLoading}
+                          className="text-xs px-2.5 py-1.5 text-red-500 border border-red-300 rounded-lg active:bg-red-50 disabled:opacity-50"
+                        >
+                          取消
+                        </button>
+                      </div>
                     ) : (
                       <button
                         onClick={() => handleAttendance(emp.id)}

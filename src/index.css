@@ -16,3 +16,83 @@ body {
 input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.6;
 }
+
+/* ========== ガチャアニメーション ========== */
+@keyframes sparkle {
+  0%   { opacity: 0; transform: scale(0) rotate(0deg) translate(0, 0); }
+  30%  { opacity: 1; transform: scale(1.2) rotate(90deg) translate(var(--tx), var(--ty)); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(0) rotate(270deg) translate(calc(var(--tx)*1.5), calc(var(--ty)*1.5)); }
+}
+
+@keyframes legend-glow {
+  0%, 100% { box-shadow: 0 0 15px 5px rgba(251,191,36,0.6), 0 0 40px 10px rgba(251,191,36,0.3); }
+  50%       { box-shadow: 0 0 30px 10px rgba(251,191,36,1),  0 0 80px 20px rgba(251,191,36,0.6); }
+}
+
+@keyframes card-reveal {
+  0%   { transform: scale(0.3) rotateY(90deg); opacity: 0; }
+  60%  { transform: scale(1.08) rotateY(-5deg); opacity: 1; }
+  80%  { transform: scale(0.97) rotateY(2deg); }
+  100% { transform: scale(1) rotateY(0deg); opacity: 1; }
+}
+
+@keyframes float-up {
+  0%   { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-60px) scale(0.5); opacity: 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50%       { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  20%       { transform: rotate(-8deg); }
+  40%       { transform: rotate(8deg); }
+  60%       { transform: rotate(-6deg); }
+  80%       { transform: rotate(6deg); }
+}
+
+@keyframes quote-reveal {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes spin-slow {
+  0%   { transform: rotateX(0deg); }
+  100% { transform: rotateX(720deg); }
+}
+
+@keyframes rainbow-border {
+  0%   { border-color: #f59e0b; }
+  25%  { border-color: #ef4444; }
+  50%  { border-color: #a855f7; }
+  75%  { border-color: #3b82f6; }
+  100% { border-color: #f59e0b; }
+}
+
+.legend-card {
+  animation: legend-glow 1.5s ease-in-out infinite;
+}
+
+.card-animate-in {
+  animation: card-reveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.sparkle-item {
+  animation: sparkle 1.2s ease-out forwards;
+}
+
+.quote-animate-in {
+  animation: quote-reveal 0.5s ease-out forwards;
+}
+
+.box-shake {
+  animation: shake 0.6s ease-in-out;
+}
+
+.pulse-glow-anim {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
