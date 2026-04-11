@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import type { Employee, AttendanceWithEmployee, WakeCheckWithEmployee } from '../types'
 
-type Tab = 'employees' | 'attendance' | 'wakecheck'
+type Tab = 'employees' | 'att_edit' | 'attendance' | 'wakecheck'
 
 export default function AdminPage() {
   const now = new Date()
@@ -22,6 +22,11 @@ export default function AdminPage() {
   const [attHistory, setAttHistory] = useState<AttendanceWithEmployee[]>([])
   const [attDateFilter, setAttDateFilter] = useState('')
   const [deletingAtt, setDeletingAtt] = useState<string | null>(null)
+
+  // 出勤編集
+  const [attEditDate, setAttEditDate] = useState(todayStr)
+  const [attEditRecords, setAttEditRecords] = useState<{ employee_id: string }[]>([])
+  const [togglingEmp, setTogglingEmp] = useState<string | null>(null)
 
   // 起床確認履歴
   const [wakeDate, setWakeDate] = useState(todayStr)
@@ -46,6 +51,14 @@ export default function AdminPage() {
     if (data) setAttHistory(data as AttendanceWithEmployee[])
   }, [attYear, attMonth])
 
+  const fetchAttEditRecords = useCallback(async () => {
+    const { data } = await supabase
+      .from('attendance')
+      .select('employee_id')
+      .eq('date', attEditDate)
+    if (data) setAttEditRecords(data)
+  }, [attEditDate])
+
   const fetchWakeHistory = useCallback(async () => {
     const { data } = await supabase
       .from('wake_checks')
@@ -57,6 +70,7 @@ export default function AdminPage() {
 
   useEffect(() => { fetchEmployees() }, [fetchEmployees])
   useEffect(() => { fetchAttHistory() }, [fetchAttHistory])
+  useEffect(() => { fetchAttEditRecords() }, [fetchAttEditRecords])
   useEffect(() => { fetchWakeHistory() }, [fetchWakeHistory])
 
   const handleAddEmployee = async () => {
@@ -88,6 +102,18 @@ export default function AdminPage() {
     setDeletingAtt(null)
   }
 
+  const handleToggleAttEdit = async (empId: string) => {
+    setTogglingEmp(empId)
+    const existing = attEditRecords.find(r => r.employee_id === empId)
+    if (existing) {
+      await supabase.from('attendance').delete().eq('employee_id', empId).eq('date', attEditDate)
+    } else {
+      await supabase.from('attendance').insert({ employee_id: empId, date: attEditDate })
+    }
+    await fetchAttEditRecords()
+    setTogglingEmp(null)
+  }
+
   const prevAttMonth = () => {
     if (attMonth === 1) { setAttYear(y => y - 1); setAttMonth(12) }
     else setAttMonth(m => m - 1)
@@ -99,6 +125,7 @@ export default function AdminPage() {
 
   const TABS: { key: Tab; label: string }[] = [
     { key: 'employees', label: '従業員管理' },
+    { key: 'att_edit',  label: '出勤編集' },
     { key: 'attendance', label: '出勤履歴' },
     { key: 'wakecheck', label: '起床履歴' },
   ]
@@ -206,6 +233,77 @@ export default function AdminPage() {
                   ))
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ===== 出勤編集 ===== */}
+          {tab === 'att_edit' && (
+            <div>
+              <p className="text-xs text-gray-500 mb-3">日付を選んで出勤を登録・取消できます</p>
+
+              {/* 日付選択 */}
+              <input
+                type="date"
+                value={attEditDate}
+                onChange={e => setAttEditDate(e.target.value)}
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 mb-4"
+              />
+
+              {/* 出勤カウント */}
+              <div className="bg-blue-600 text-white rounded-2xl p-4 mb-4 flex items-center justify-between shadow-md">
+                <div>
+                  <p className="text-blue-200 text-xs">{attEditDate} の出勤</p>
+                  <p className="text-3xl font-bold mt-0.5">
+                    {attEditRecords.length}
+                    <span className="text-base ml-1 font-normal">人</span>
+                  </p>
+                </div>
+                <div className="text-4xl opacity-30">👷</div>
+              </div>
+
+              {/* 従業員リスト */}
+              {employees.filter(e => e.is_active).length === 0 ? (
+                <p className="text-center text-gray-400 py-8 text-sm">従業員が登録されていません</p>
+              ) : (
+                <div className="space-y-2">
+                  {employees.filter(e => e.is_active).map(emp => {
+                    const checked = attEditRecords.some(r => r.employee_id === emp.id)
+                    const isLoading = togglingEmp === emp.id
+                    return (
+                      <div
+                        key={emp.id}
+                        className={`bg-white rounded-xl p-4 flex items-center justify-between shadow-sm border transition-colors ${
+                          checked ? 'border-green-200 bg-green-50' : 'border-gray-100'
+                        }`}
+                      >
+                        <span className="font-medium text-gray-800">{emp.name}</span>
+                        {checked ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-green-600 font-medium flex items-center gap-1">
+                              ✓ 出勤済み
+                            </span>
+                            <button
+                              onClick={() => handleToggleAttEdit(emp.id)}
+                              disabled={isLoading}
+                              className="text-xs px-2.5 py-1.5 text-red-500 border border-red-300 rounded-lg active:bg-red-50 disabled:opacity-50"
+                            >
+                              {isLoading ? '...' : '取消'}
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleToggleAttEdit(emp.id)}
+                            disabled={isLoading}
+                            className="bg-blue-600 text-white text-sm px-5 py-2 rounded-xl font-bold disabled:opacity-50 active:bg-blue-700"
+                          >
+                            {isLoading ? '...' : '出勤登録'}
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 
