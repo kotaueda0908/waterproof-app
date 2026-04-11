@@ -4,8 +4,8 @@ import type { Employee, Attendance } from '../types'
 
 
 export default function AttendancePage() {
-  const todayStr = new Date().toISOString().slice(0, 10)
   const now = new Date()
+  const todayStr = now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })
 
   const [employees, setEmployees] = useState<Employee[]>([])
   const [todayAttendance, setTodayAttendance] = useState<Attendance[]>([])

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import type { Employee, WakeCheckWithEmployee } from '../types'
 
 export default function WakeCheckPage() {
-  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })
 
   const [employees, setEmployees] = useState<Employee[]>([])
   const [checks, setChecks] = useState<WakeCheckWithEmployee[]>([])
