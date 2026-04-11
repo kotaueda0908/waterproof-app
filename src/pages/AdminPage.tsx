@@ -6,7 +6,7 @@ type Tab = 'employees' | 'attendance' | 'wakecheck'
 
 export default function AdminPage() {
   const now = new Date()
-  const todayStr = now.toISOString().slice(0, 10)
+  const todayStr = now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })
 
   const [tab, setTab] = useState<Tab>('employees')
   const [loading, setLoading] = useState(true)
@@ -20,6 +20,8 @@ export default function AdminPage() {
   const [attYear, setAttYear] = useState(now.getFullYear())
   const [attMonth, setAttMonth] = useState(now.getMonth() + 1)
   const [attHistory, setAttHistory] = useState<AttendanceWithEmployee[]>([])
+  const [attDateFilter, setAttDateFilter] = useState('')
+  const [deletingAtt, setDeletingAtt] = useState<string | null>(null)
 
   // 起床確認履歴
   const [wakeDate, setWakeDate] = useState(todayStr)
@@ -76,6 +78,14 @@ export default function AdminPage() {
     if (!confirm(`「${emp.name}」を削除しますか？\n出勤・起床確認記録も全て削除されます。`)) return
     await supabase.from('employees').delete().eq('id', emp.id)
     fetchEmployees()
+  }
+
+  const handleDeleteAttendance = async (att: AttendanceWithEmployee) => {
+    if (!confirm(`「${att.employees?.name}」${att.date} の出勤記録を削除しますか？`)) return
+    setDeletingAtt(att.id)
+    await supabase.from('attendance').delete().eq('id', att.id)
+    await fetchAttHistory()
+    setDeletingAtt(null)
   }
 
   const prevAttMonth = () => {
@@ -203,7 +213,7 @@ export default function AdminPage() {
           {tab === 'attendance' && (
             <div>
               {/* 月ナビゲーション */}
-              <div className="flex items-center justify-between mb-4 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between mb-3 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
                 <button onClick={prevAttMonth} className="w-9 h-9 flex items-center justify-center text-gray-600 rounded-full active:bg-gray-100">
                   ‹
                 </button>
@@ -213,30 +223,65 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              <p className="text-xs text-gray-500 mb-3">{attHistory.length}件のレコード</p>
-
-              <div className="space-y-2">
-                {attHistory.length === 0 ? (
-                  <p className="text-center text-gray-400 py-8 text-sm">データがありません</p>
-                ) : (
-                  attHistory.map(att => {
-                    const d = new Date(att.date + 'T00:00:00')
-                    return (
-                      <div
-                        key={att.id}
-                        className="bg-white rounded-xl p-3.5 flex items-center justify-between shadow-sm border border-gray-100"
-                      >
-                        <span className="text-sm text-gray-500">
-                          {d.toLocaleDateString('ja-JP', {
-                            month: 'numeric', day: 'numeric', weekday: 'short',
-                          })}
-                        </span>
-                        <span className="font-medium text-gray-800">{att.employees?.name}</span>
-                      </div>
-                    )
-                  })
+              {/* 日付フィルター */}
+              <div className="flex items-center gap-2 mb-3">
+                <input
+                  type="date"
+                  value={attDateFilter}
+                  onChange={e => setAttDateFilter(e.target.value)}
+                  className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                />
+                {attDateFilter && (
+                  <button
+                    onClick={() => setAttDateFilter('')}
+                    className="text-xs text-gray-500 border border-gray-300 rounded-xl px-3 py-2 active:bg-gray-50"
+                  >
+                    クリア
+                  </button>
                 )}
               </div>
+
+              {(() => {
+                const filtered = attDateFilter
+                  ? attHistory.filter(a => a.date === attDateFilter)
+                  : attHistory
+                return (
+                  <>
+                    <p className="text-xs text-gray-500 mb-3">
+                      {attDateFilter ? `${attDateFilter} — ` : ''}{filtered.length}件
+                    </p>
+                    <div className="space-y-2">
+                      {filtered.length === 0 ? (
+                        <p className="text-center text-gray-400 py-8 text-sm">データがありません</p>
+                      ) : (
+                        filtered.map(att => {
+                          const d = new Date(att.date + 'T00:00:00')
+                          return (
+                            <div
+                              key={att.id}
+                              className="bg-white rounded-xl p-3.5 flex items-center justify-between shadow-sm border border-gray-100"
+                            >
+                              <div>
+                                <span className="text-sm text-gray-500">
+                                  {d.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' })}
+                                </span>
+                                <span className="ml-3 font-medium text-gray-800">{att.employees?.name}</span>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteAttendance(att)}
+                                disabled={deletingAtt === att.id}
+                                className="text-xs px-3 py-1.5 rounded-lg border text-red-500 border-red-300 active:bg-red-50 disabled:opacity-50"
+                              >
+                                {deletingAtt === att.id ? '...' : '削除'}
+                              </button>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
+                  </>
+                )
+              })()}
             </div>
           )}
 
