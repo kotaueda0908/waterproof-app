@@ -5,9 +5,12 @@ import { financeAuth } from '../lib/financeAuth'
 import FinanceAuth from '../components/finance/FinanceAuth'
 import FinanceList from '../components/finance/FinanceList'
 import FinanceDetail from '../components/finance/FinanceDetail'
+import SurveyList from '../components/survey/SurveyList'
+import SurveyDetail from '../components/survey/SurveyDetail'
 
-type Tab = 'employees' | 'att_edit' | 'attendance' | 'wakecheck' | 'finance'
+type Tab = 'employees' | 'att_edit' | 'attendance' | 'wakecheck' | 'finance' | 'survey'
 type FinanceView = 'list' | 'detail'
+type SurveyView = 'list' | 'detail'
 
 export default function AdminPage() {
   const now = new Date()
@@ -41,6 +44,10 @@ export default function AdminPage() {
   const [financeAuthed, setFinanceAuthed] = useState(() => financeAuth.isAuthenticated())
   const [financeView, setFinanceView] = useState<FinanceView>('list')
   const [selectedFinanceId, setSelectedFinanceId] = useState<string | null>(null)
+
+  // 現調メモ
+  const [surveyView, setSurveyView] = useState<SurveyView>('list')
+  const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null)
 
   const fetchEmployees = useCallback(async () => {
     const { data } = await supabase.from('employees').select('*').order('created_at')
@@ -139,6 +146,7 @@ export default function AdminPage() {
     { key: 'attendance', label: '出勤履歴' },
     { key: 'wakecheck', label: '起床履歴' },
     { key: 'finance',   label: '金額管理' },
+    { key: 'survey',    label: '現調メモ' },
   ]
 
   return (
@@ -450,6 +458,23 @@ export default function AdminPage() {
                 <FinanceDetail
                   id={selectedFinanceId}
                   onBack={() => { setFinanceView('list'); setSelectedFinanceId(null) }}
+                />
+              )}
+            </div>
+          )}
+
+          {/* ===== 現調メモ ===== */}
+          {tab === 'survey' && (
+            <div>
+              {surveyView === 'list' ? (
+                <SurveyList
+                  onSelect={id => { setSelectedSurveyId(id); setSurveyView('detail') }}
+                  onNew={() => { setSelectedSurveyId(null); setSurveyView('detail') }}
+                />
+              ) : (
+                <SurveyDetail
+                  id={selectedSurveyId}
+                  onBack={() => { setSurveyView('list'); setSelectedSurveyId(null) }}
                 />
               )}
             </div>

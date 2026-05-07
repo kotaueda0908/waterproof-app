@@ -81,3 +81,47 @@ export interface FinanceAdditionalBudget {
   budget_date: string | null
   created_at: string
 }
+
+// ─── 現地調査メモ ──────────────────────────────────────────────
+export interface SurveyRecord {
+  id: string
+  site_name: string | null
+  address: string | null
+  survey_date: string | null      // YYYY-MM-DD
+  surveyor: string | null
+  client: string | null
+  building_floors: string | null
+  desired_timing: string | null
+  urgency: string | null          // '高' | '中' | '低' | '未設定'
+  methods: string[] | null
+  methods_other: string | null
+  overall_notes: string | null
+  access_route: string | null
+  power_supply: string | null
+  water_supply: string | null
+  neighbor_consideration: string | null
+  other_remarks: string | null
+  created_at: string
+}
+
+export interface SurveyLocation {
+  id: string
+  survey_record_id: string
+  sort_order: number
+  name: string | null
+  dimensions_note: string | null
+  existing_spec: string | null
+  deterioration: string | null
+  methods: string[] | null
+  methods_other: string | null
+  rising_height: number | null
+  expansion_joint: number | null
+  drain_count: number | null
+  drain_diameter: string | null
+  degassing_count: number | null
+  fence_count: number | null
+  ac_count: number | null
+  other_attachments: string | null
+  special_notes: string | null
+  created_at: string
+}
