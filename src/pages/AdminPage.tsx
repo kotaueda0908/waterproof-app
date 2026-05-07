@@ -1,8 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import type { Employee, AttendanceWithEmployee, WakeCheckWithEmployee } from '../types'
+import { financeAuth } from '../lib/financeAuth'
+import FinanceAuth from '../components/finance/FinanceAuth'
+import FinanceList from '../components/finance/FinanceList'
+import FinanceDetail from '../components/finance/FinanceDetail'
 
-type Tab = 'employees' | 'att_edit' | 'attendance' | 'wakecheck'
+type Tab = 'employees' | 'att_edit' | 'attendance' | 'wakecheck' | 'finance'
+type FinanceView = 'list' | 'detail'
 
 export default function AdminPage() {
   const now = new Date()
@@ -31,6 +36,11 @@ export default function AdminPage() {
   // 起床確認履歴
   const [wakeDate, setWakeDate] = useState(todayStr)
   const [wakeHistory, setWakeHistory] = useState<WakeCheckWithEmployee[]>([])
+
+  // 金額管理
+  const [financeAuthed, setFinanceAuthed] = useState(() => financeAuth.isAuthenticated())
+  const [financeView, setFinanceView] = useState<FinanceView>('list')
+  const [selectedFinanceId, setSelectedFinanceId] = useState<string | null>(null)
 
   const fetchEmployees = useCallback(async () => {
     const { data } = await supabase.from('employees').select('*').order('created_at')
@@ -128,6 +138,7 @@ export default function AdminPage() {
     { key: 'att_edit',  label: '出勤編集' },
     { key: 'attendance', label: '出勤履歴' },
     { key: 'wakecheck', label: '起床履歴' },
+    { key: 'finance',   label: '金額管理' },
   ]
 
   return (
@@ -137,12 +148,12 @@ export default function AdminPage() {
       </div>
 
       {/* タブ */}
-      <div className="flex bg-white border-b sticky top-[52px] z-20">
+      <div className="flex bg-white border-b sticky top-[52px] z-20 overflow-x-auto">
         {TABS.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 py-3 text-xs font-medium border-b-2 transition-colors ${
+            className={`flex-shrink-0 flex-1 py-3 text-xs font-medium border-b-2 transition-colors min-w-0 ${
               tab === key ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'
             }`}
           >
@@ -151,7 +162,7 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {loading ? (
+      {loading && tab !== 'finance' ? (
         <div className="flex justify-center items-center h-64">
           <div className="text-gray-400 text-sm">読み込み中...</div>
         </div>
@@ -165,7 +176,6 @@ export default function AdminPage() {
                 登録した従業員が出勤・起床確認画面に表示されます
               </p>
 
-              {/* 追加フォーム */}
               <div className="flex gap-2 mb-4">
                 <input
                   type="text"
@@ -241,7 +251,6 @@ export default function AdminPage() {
             <div>
               <p className="text-xs text-gray-500 mb-3">日付を選んで出勤を登録・取消できます</p>
 
-              {/* 日付選択 */}
               <input
                 type="date"
                 value={attEditDate}
@@ -249,7 +258,6 @@ export default function AdminPage() {
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 mb-4"
               />
 
-              {/* 出勤カウント */}
               <div className="bg-blue-600 text-white rounded-2xl p-4 mb-4 flex items-center justify-between shadow-md">
                 <div>
                   <p className="text-blue-200 text-xs">{attEditDate} の出勤</p>
@@ -261,7 +269,6 @@ export default function AdminPage() {
                 <div className="text-4xl opacity-30">👷</div>
               </div>
 
-              {/* 従業員リスト */}
               {employees.filter(e => e.is_active).length === 0 ? (
                 <p className="text-center text-gray-400 py-8 text-sm">従業員が登録されていません</p>
               ) : (
@@ -310,7 +317,6 @@ export default function AdminPage() {
           {/* ===== 出勤履歴 ===== */}
           {tab === 'attendance' && (
             <div>
-              {/* 月ナビゲーション */}
               <div className="flex items-center justify-between mb-3 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
                 <button onClick={prevAttMonth} className="w-9 h-9 flex items-center justify-center text-gray-600 rounded-full active:bg-gray-100">
                   ‹
@@ -321,7 +327,6 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              {/* 日付フィルター */}
               <div className="flex items-center gap-2 mb-3">
                 <input
                   type="date"
@@ -386,7 +391,6 @@ export default function AdminPage() {
           {/* ===== 起床確認履歴 ===== */}
           {tab === 'wakecheck' && (
             <div>
-              {/* 日付選択 */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">日付</label>
                 <input
@@ -397,7 +401,6 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* 全員の確認状況 */}
               <div className="space-y-2">
                 {employees.filter(e => e.is_active).length === 0 ? (
                   <p className="text-center text-gray-400 py-8 text-sm">
@@ -432,6 +435,26 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+
+          {/* ===== 金額管理 ===== */}
+          {tab === 'finance' && (
+            <div>
+              {!financeAuthed ? (
+                <FinanceAuth onSuccess={() => setFinanceAuthed(true)} />
+              ) : financeView === 'list' ? (
+                <FinanceList
+                  onSelect={id => { setSelectedFinanceId(id); setFinanceView('detail') }}
+                  onNew={() => { setSelectedFinanceId(null); setFinanceView('detail') }}
+                />
+              ) : (
+                <FinanceDetail
+                  id={selectedFinanceId}
+                  onBack={() => { setFinanceView('list'); setSelectedFinanceId(null) }}
+                />
+              )}
+            </div>
+          )}
+
         </div>
       )}
     </div>
